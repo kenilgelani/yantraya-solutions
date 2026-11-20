@@ -386,3 +386,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .tblock .tb-brand .tb-logo { display: block; align-self: flex-start; background: #fff; padding: .7rem 1rem; clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px); }
 .tblock .tb-brand .tb-logo img { display: block; width: min(250px, 100%); height: auto; }
 .brand img { width: auto; }
+
+/* the journey is daylight throughout */
+.has-webgl .journey { background: #eef1f7; }
+.has-webgl .journey__veil { background: linear-gradient(90deg, #eef1f7 0, rgba(238,241,247,.95) 28%, rgba(238,241,247,0) 54%); }

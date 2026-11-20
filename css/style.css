@@ -390,3 +390,24 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 /* the journey is daylight throughout */
 .has-webgl .journey { background: #eef1f7; }
 .has-webgl .journey__veil { background: linear-gradient(90deg, #eef1f7 0, rgba(238,241,247,.95) 28%, rgba(238,241,247,0) 54%); }
+
+/* ---------- Simple home hero: headline and one photo ---------- */
+.intro { background: var(--ink); color: #fff; }
+.intro__in { display: grid; grid-template-columns: 1.1fr .9fr; gap: clamp(2rem, 5vw, 4.5rem); align-items: center; padding-block: clamp(3rem, 7vw, 5.5rem); }
+.intro h1 { color: #fff; }
+.intro .motto { color: #ffb486; font-size: 1.25rem; font-weight: 500; margin: 0 0 .2rem; }
+.intro .motto-gloss { color: #aab4d4; font-size: .98rem; margin: 0 0 1.5rem; }
+.intro__lead { color: #d5dbee; font-size: 1.2rem; margin: 1.3rem 0 0; max-width: 48ch; }
+.intro__img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; clip-path: polygon(48px 0, 100% 0, 100% calc(100% - 48px), calc(100% - 48px) 100%, 0 100%, 0 48px); }
+@media (max-width: 860px) {
+  .intro__in { grid-template-columns: 1fr; }
+  .intro__img { aspect-ratio: 4 / 3; }
+}
+
+/* isometric world: soft fade to paper at the edges, like a model on a table */
+.has-webgl .journey__stick::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(115% 95% at 64% 46%, rgba(238,241,247,0) 52%, rgba(238,241,247,.92) 100%); }
+.has-webgl .journey__veil { background: linear-gradient(90deg, #eef1f7 0, rgba(238,241,247,.97) 27%, rgba(238,241,247,0) 50%); }
+.has-webgl .journey__panels, .has-webgl .journey__nav { z-index: 2; }
+@media (max-width: 860px) {
+  .has-webgl .journey__stick::after { background: radial-gradient(120% 60% at 50% 26%, rgba(238,241,247,0) 55%, rgba(238,241,247,.9) 100%); }
+}

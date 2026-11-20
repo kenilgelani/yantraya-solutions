@@ -1,0 +1,2 @@
+Models in this folder are from Kenney (www.kenney.nl): Mini Characters, Nature Kit, Furniture Kit and Factory Kit.
+Licence: Creative Commons Zero (CC0), http://creativecommons.org/publicdomain/zero/1.0/

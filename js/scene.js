@@ -145,6 +145,7 @@
     cyl(g, 0.07, 0.07, 0.1, SKIN, 0, 1.36, 0, 8, SOFT);
     ball(g, 0.185, SKIN, 0, 1.55, 0, SOFT);
     ball(g, 0.195, HAIR, 0, 1.6, -0.03, SOFT).scale.set(1, 0.78, 1);
+    swapIn(g, 'chars/character-' + CHARS[(charN++) % CHARS.length] + '.glb', 1.78);
     return g;
   }
   function legs(p, w, d, h, c) {
@@ -196,6 +197,55 @@
     return s;
   }
 
+  // ---------- ready-made 3D models (Kenney, CC0) ----------
+  // Each one is dropped into a holder; whatever code-built stand-in is passed as `hide` disappears once it loads.
+  var gl = THREE.GLTFLoader ? new THREE.GLTFLoader() : null, cache = {}, mixers = [], lit = {};
+  function fetchModel(path) {
+    if (!cache[path]) cache[path] = new Promise(function (res) { gl.load('models/' + path, res, undefined, function () { res(null); }); });
+    return cache[path];
+  }
+  function model(path, parent, x, y, z, o) {
+    o = o || {};
+    var holder = grp(parent, x, y, z); if (o.ry) holder.rotation.y = o.ry;
+    if (!gl) return holder;
+    fetchModel(path).then(function (g) {
+      if (!g) return;
+      var rigged = g.animations && g.animations.length && THREE.SkeletonUtils;
+      var obj = rigged ? THREE.SkeletonUtils.clone(g.scene) : g.scene.clone(true);
+      obj.traverse(function (m) {
+        if (!m.isMesh) return;
+        m.castShadow = true; m.receiveShadow = true; if (m.isSkinnedMesh) m.frustumCulled = false;
+        var src = m.material;
+        if (src && src.isMeshBasicMaterial) {      // these packs ship unlit; give them real light and shadow
+          if (!lit[src.uuid]) lit[src.uuid] = new THREE.MeshStandardMaterial({ color: TINT[src.name] ? C(TINT[src.name]) : src.color, map: src.map, roughness: 0.85, metalness: 0, flatShading: true, vertexColors: src.vertexColors });
+          m.material = lit[src.uuid];
+          if (!m.geometry.attributes.normal) m.geometry.computeVertexNormals();
+        } else if (src && src.isMeshStandardMaterial) {
+          src.metalness = 0; src.roughness = Math.max(src.roughness, 0.7);
+          if (TINT[src.name] && !src.userData.tinted) { src.color.copy(C(TINT[src.name])); src.userData.tinted = true; }
+        }
+      });
+      var bb = new THREE.Box3().setFromObject(obj), sz = bb.getSize(new THREE.Vector3());
+      var k = o.h ? o.h / sz.y : o.w ? o.w / Math.max(sz.x, sz.z) : 1;
+      obj.scale.multiplyScalar(k); bb.setFromObject(obj);
+      var c = bb.getCenter(new THREE.Vector3());
+      obj.position.x -= c.x; obj.position.z -= c.z; obj.position.y -= bb.min.y;
+      holder.add(obj);
+      if (o.hide) o.hide.forEach(function (h) { h.visible = false; });
+      if (rigged) {
+        var clip = THREE.AnimationClip.findByName(g.animations, o.anim || 'idle');
+        if (clip) { var mxr = new THREE.AnimationMixer(obj), act = mxr.clipAction(clip); act.play(); mxr.update(rnd() * 2); mixers.push(mxr); }
+      }
+      kick();
+    });
+    return holder;
+  }
+  function swapIn(g, path, h, anim) { var olds = g.children.slice(); if (gl) model(path, g, 0, 0, 0, { h: h, hide: olds, anim: anim }); }
+  // the nature pack is teal by design; use the campus greens and browns instead
+  var TINT = { leafsGreen: 0x62ad3c, leafsDark: 0x3c8a3a, plant: 0x4fa646, woodBark: 0x8a5a36, woodBarkDark: 0x6f4a2d };
+  var CHARS = ['male-a', 'female-a', 'worker', 'male-c', 'female-c', 'male-e', 'female-d', 'male-b', 'female-b', 'male-f', 'female-e', 'male-d', 'female-f'], charN = 0;
+  var TREES = ['tree_default', 'tree_oak', 'tree_detailed', 'tree_fat', 'tree_tall', 'tree_simple'], PINES = ['tree_pineRoundA', 'tree_pineRoundC', 'tree_pineTallA', 'tree_pineDefaultA'];
+
   // ---------- the land ----------
   var world = new THREE.Group(); scene.add(world);
   var PL = [[0, 25.5], [-10.5, 12], [10.5, 2], [-10.5, -10], [10.5, -20], [-7, -40]], POND = [5.5, -47];
@@ -239,11 +289,13 @@
       var r = 0.95 + rnd() * 0.55, b = put(new THREE.Mesh(blobGeo, leaf[(rnd() * 4) | 0]), g, (rnd() - 0.5) * 1.5, 2.5 + rnd() * 1.1, (rnd() - 0.5) * 1.5);
       b.scale.set(r, r * 0.86, r); b.rotation.set(rnd() * 3, rnd() * 3, rnd() * 3);
     }
+    g.rotation.y = rnd() * 6; swapIn(g, 'nature/' + TREES[(rnd() * TREES.length) | 0] + '.glb', 5.4);
   }
   function pine(x, z, s) {
     var g = grp(world, x, 0, z); g.scale.setScalar(s);
     put(new THREE.Mesh(trunkGeo, bark), g, 0, 0.5, 0);
     [[1.25, 1.7, 1.5], [1.0, 1.5, 2.5], [0.72, 1.3, 3.4]].forEach(function (c) { var m = put(new THREE.Mesh(coneGeo, mat(0x2f7a48)), g, 0, c[2], 0); m.scale.set(c[0], c[1], c[0]); });
+    g.rotation.y = rnd() * 6; swapIn(g, 'nature/' + PINES[(rnd() * PINES.length) | 0] + '.glb', 5.6);
   }
   function clear(x, z, margin) {   // true when a spot is free of road, buildings and the views into them
     if (Math.abs(x) < 3.2 + margin && z > -22 && z < 62) return false;
@@ -347,6 +399,9 @@
       [ORANGE, STEEL, NAVYL, WHITE, ORANGE].forEach(function (c, j) { box(g, 0.16, 0.42, 0.34, c, 3.35 + ((j + i) % 5) * 0.24, y + 0.24, -3.72); });
     });
     person(g, NAVY, 1.1, 1.5); person(g, ORANGE, -0.5, 1.7, 0.94); person(g, NAVYL, -2.9, 0.4, 1.02);
+    model('furniture/chairDesk.glb', g, 2.6, 0, 1.0, { h: 1.25, ry: Math.PI }); model('furniture/pottedPlant.glb', g, 5.2, 0, 2.6, { h: 1.6 });
+    model('furniture/lampRoundFloor.glb', g, -5.3, 0, 2.8, { h: 2.3 }); model('furniture/bookcaseClosedWide.glb', g, 0.6, 0, -4.15, { h: 1.5 });
+    model('furniture/desk.glb', g, 4.4, 0, 0.2, { h: 1.05, ry: -Math.PI / 2 }); model('furniture/laptop.glb', g, 4.4, 1.05, 0.2, { w: 0.6, ry: -Math.PI / 2 });
     return h;
   })(building(st[1], 'planks'));
 
@@ -376,6 +431,7 @@
     cyl(g, 0.16, 0.16, 0.14, STEELD, 2.8, 1.33, -3.4, 6); cyl(g, 0.16, 0.16, 0.14, STEELD, 3.2, 1.33, -3.7, 6);
     box(g, 0.34, 0.34, 0.34, ORANGE, 3.6, 1.43, -3.5);
     person(g, NAVY, 0.9, 2.2); person(g, NAVYL, -3.6, 1.4, 0.95);
+    model('factory/machine.glb', g, -4.9, 0, -3.3, { h: 2.7 }); model('factory/box-large.glb', g, 5.0, 0, 2.6, { w: 1.2 }); model('factory/box-small.glb', g, 4.2, 0, 3.4, { w: 0.8 });
     return function (q, t) {
       part.scale.z = Math.max(0.02, q);
       gantry.position.y = bed + H * q + 0.42;
@@ -413,6 +469,8 @@
     box(g, 1.4, 2.5, 1.0, STEEL, 4.0, 1.25, -3.8, { metalness: 0.4, roughness: 0.4 });
     for (var d = 0; d < 4; d++) { box(g, 1.2, 0.5, 0.05, WHITE, 4.0, 0.36 + d * 0.6, -3.28); box(g, 0.4, 0.07, 0.07, ORANGE, 4.0, 0.42 + d * 0.6, -3.23); }
     person(g, ORANGE, -2.3, 1.3); person(g, NAVY, 2.6, 2.0, 0.95);
+    model('furniture/desk.glb', g, 4.6, 0, 1.0, { h: 1.05, ry: -Math.PI / 2 }); model('furniture/laptop.glb', g, 4.6, 1.05, 1.0, { w: 0.6, ry: -Math.PI / 2 });
+    model('furniture/chairDesk.glb', g, 3.6, 0, 1.0, { h: 1.25, ry: Math.PI / 2 }); model('furniture/pottedPlant.glb', g, -5.3, 0, 3.0, { h: 1.6 });
     var on = C(ORANGE), off = C(STEEL);
     return function (q, t) {
       bridge.position.z = Math.sin(t * 0.5) * 0.7;
@@ -446,6 +504,7 @@
     seg(b, 0.2, 2.8, 1.1, 2.8, 0.06); seg(b, 0.2, 2.5, 1.1, 2.5, 0.06); seg(b, 0.2, 2.2, 0.8, 2.2, 0.06); seg(b, 0.2, 1.9, 1.0, 1.9, 0.06);
     var trainer = person(g, ORANGE, -2.0, -0.4, 1.04);
     var team = [[-4.3, 1.7, NAVY], [-3.2, 2.3, NAVYL], [-2.0, 2.5, NAVY], [-0.9, 2.2, STEELD], [0.1, 1.6, NAVYL]].map(function (p) { return person(g, p[2], p[0], p[1], 0.96); });
+    model('factory/robot-arm-a.glb', g, 5.0, 0, 1.6, { h: 3.0 }); model('factory/box-large.glb', g, 5.0, 0, 3.4, { w: 1.2 }); model('factory/box-small.glb', g, -5.4, 0, 3.2, { w: 0.8 });
     return function (t) {
       beacon.material.emissiveIntensity = 0.25 + Math.max(0, Math.sin(t * 4)) * 1.4;
       trainer.rotation.y = Math.sin(t * 0.9) * 0.35;
@@ -469,6 +528,7 @@
       tbox(g, 2.6, 0.12, 0.7, 'planks', 1, 0.3, sd * 5.2, 0.62, 2.6).rotation.y = sd * 0.5;
       box(g, 0.12, 0.5, 0.6, DARK, sd * 4.4, 0.33, 3.0); box(g, 0.12, 0.5, 0.6, DARK, sd * 6.0, 0.33, 2.2);
     });
+    model('furniture/pottedPlant.glb', g, -5.4, 0, -4.2, { h: 1.7 }); model('furniture/pottedPlant.glb', g, 5.4, 0, -4.2, { h: 1.7 });
     return function (t) {
       emblem.rotation.y = t * 0.9;
       for (var i = 0; i < people.length; i++) people[i].rotation.y = seats[i][3] + Math.sin(t * 0.8 + i * 2) * 0.12;
@@ -594,6 +654,7 @@
     function q(i) { return solo ? Math.min(1, ((t * 0.13) % 1.35)) : smooth((P - (i - 0.5)) / 0.75); }
     holo.rotation.y = t * 0.7; holo.rotation.x = 0.35; holo.position.y = 3.45 + Math.sin(t * 1.2) * 0.08;
     lab(q(2), t); audit(q(3), t); crew(t); meet(t);
+    if (!reduce) for (var mi = 0; mi < mixers.length; mi++) mixers[mi].update(dt);
 
     renderer.render(scene, camera);
     if (visible && (!reduce || Math.abs(Pt - P) > 0.001)) raf = requestAnimationFrame(frame);

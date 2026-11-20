@@ -358,8 +358,8 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 }
 
 /* ---------- Hero stop: dark studio, then daylight in the works ---------- */
-.has-webgl .journey { background: #070d26; }
-.has-webgl .journey__veil::before { content: ""; position: absolute; inset: 0; opacity: 0; transition: opacity .6s; background: linear-gradient(90deg, #070d26 0, rgba(7,13,38,.9) 24%, rgba(7,13,38,0) 50%); }
+.has-webgl .journey { background: #0d1a55; }
+.has-webgl .journey__veil::before { content: ""; position: absolute; inset: 0; opacity: 0; transition: opacity .6s; background: linear-gradient(90deg, #0d1a55 0, rgba(13,26,85,.96) 30%, rgba(13,26,85,0) 56%); }
 .has-webgl .journey__veil { transition: background-color .6s; }
 .has-webgl .journey.is-dark .journey__veil { background: none; }
 .has-webgl .journey.is-dark .journey__veil::before { opacity: 1; }
@@ -374,7 +374,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .has-webgl .journey.is-dark .jnav button:hover, .has-webgl .journey.is-dark .jnav button.is-on { color: #fff; }
 .has-webgl .stop h1 { font-size: clamp(2.5rem, 5vw, 4.3rem); }
 @media (max-width: 860px) {
-  .has-webgl .journey.is-dark .stop, .has-webgl .journey.is-dark .stop.is-on { background: rgba(7,13,38,.94); }
+  .has-webgl .journey.is-dark .stop, .has-webgl .journey.is-dark .stop.is-on { background: rgba(13,26,85,.94); }
   .has-webgl .stop h1 { font-size: 2rem; }
 }
 

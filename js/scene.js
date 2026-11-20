@@ -136,7 +136,7 @@
   function cyl(p, rt, rb, h, c, x, y, z, seg, o) { return put(new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg || 16), mat(c, o)), p, x, y, z); }
   function ball(p, r, c, x, y, z, o) { return put(new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), mat(c, o)), p, x, y, z); }
   function grp(p, x, y, z) { var g = new THREE.Group(); g.position.set(x || 0, y || 0, z || 0); p.add(g); return g; }
-  function person(p, c, x, z, s) {
+  function person(p, c, x, z, s, who, anim) {
     var g = grp(p, x, 0, z); g.scale.setScalar((s || 1) * 1.08);
     cyl(g, 0.085, 0.08, 0.66, DARK, -0.1, 0.33, 0, 8, SOFT); cyl(g, 0.085, 0.08, 0.66, DARK, 0.1, 0.33, 0, 8, SOFT);
     cyl(g, 0.21, 0.17, 0.62, c, 0, 0.96, 0, 12, SOFT); ball(g, 0.21, c, 0, 1.26, 0, SOFT).scale.set(1, 0.45, 1);
@@ -145,7 +145,7 @@
     cyl(g, 0.07, 0.07, 0.1, SKIN, 0, 1.36, 0, 8, SOFT);
     ball(g, 0.185, SKIN, 0, 1.55, 0, SOFT);
     ball(g, 0.195, HAIR, 0, 1.6, -0.03, SOFT).scale.set(1, 0.78, 1);
-    swapIn(g, 'chars/character-' + CHARS[(charN++) % CHARS.length] + '.glb', 1.78);
+    swapIn(g, 'people/' + (who || CHARS[(charN++) % CHARS.length]) + '.glb', anim === 'Sitting' ? 1.35 : 1.95, anim);
     return g;
   }
   function legs(p, w, d, h, c) {
@@ -225,25 +225,35 @@
           if (TINT[src.name] && !src.userData.tinted) { src.color.copy(C(TINT[src.name])); src.userData.tinted = true; }
         }
       });
-      var bb = new THREE.Box3().setFromObject(obj), sz = bb.getSize(new THREE.Vector3());
-      var k = o.h ? o.h / sz.y : o.w ? o.w / Math.max(sz.x, sz.z) : 1;
-      obj.scale.multiplyScalar(k); bb.setFromObject(obj);
-      var c = bb.getCenter(new THREE.Vector3());
-      obj.position.x -= c.x; obj.position.z -= c.z; obj.position.y -= bb.min.y;
+      var mxr = null;
+      if (rigged) {      // pose first, so the figure is measured as it will actually stand or sit
+        var want = new RegExp('(^|[|_])' + (o.anim || 'Idle') + '$', 'i'), clip = null;
+        for (var ai = 0; ai < g.animations.length; ai++) if (want.test(g.animations[ai].name)) { clip = g.animations[ai]; break; }
+        if (clip) { mxr = new THREE.AnimationMixer(obj); mxr.clipAction(clip).play(); mxr.update(0.01 + rnd() * 2); }
+      }
+      function measure() {
+        var b = new THREE.Box3(), v = new THREE.Vector3(), bones = 0;
+        obj.updateMatrixWorld(true);
+        obj.traverse(function (n) { if (n.isBone) { b.expandByPoint(n.getWorldPosition(v)); bones++; } });
+        if (bones < 4) b.setFromObject(obj);
+        return { box: b, rigged: bones >= 4 };
+      }
+      var m0 = measure(), sz = m0.box.getSize(new THREE.Vector3());
+      var k = o.h ? o.h / (sz.y * (m0.rigged ? (o.sit ? 1.5 : 1.1) : 1)) : o.w ? o.w / Math.max(sz.x, sz.z) : 1;
+      obj.scale.multiplyScalar(k);
+      var m1 = measure(), c = m1.box.getCenter(new THREE.Vector3());
+      obj.position.x -= c.x; obj.position.z -= c.z; obj.position.y -= m1.box.min.y;
       holder.add(obj);
       if (o.hide) o.hide.forEach(function (h) { h.visible = false; });
-      if (rigged) {
-        var clip = THREE.AnimationClip.findByName(g.animations, o.anim || 'idle');
-        if (clip) { var mxr = new THREE.AnimationMixer(obj), act = mxr.clipAction(clip); act.play(); mxr.update(rnd() * 2); mixers.push(mxr); }
-      }
+      if (mxr) mixers.push(mxr);
       kick();
     });
     return holder;
   }
-  function swapIn(g, path, h, anim) { var olds = g.children.slice(); if (gl) model(path, g, 0, 0, 0, { h: h, hide: olds, anim: anim }); }
+  function swapIn(g, path, h, anim) { var olds = g.children.slice(); if (gl) model(path, g, 0, 0, 0, { h: h, hide: olds, anim: anim, sit: anim === 'Sitting' }); }
   // the nature pack is teal by design; use the campus greens and browns instead
   var TINT = { leafsGreen: 0x62ad3c, leafsDark: 0x3c8a3a, plant: 0x4fa646, woodBark: 0x8a5a36, woodBarkDark: 0x6f4a2d };
-  var CHARS = ['male-a', 'female-a', 'worker', 'male-c', 'female-c', 'male-e', 'female-d', 'male-b', 'female-b', 'male-f', 'female-e', 'male-d', 'female-f'], charN = 0;
+  var CHARS = ['man-suit', 'woman-casual', 'worker', 'woman-a', 'man', 'business-man'], charN = 0;
   var TREES = ['tree_default', 'tree_oak', 'tree_detailed', 'tree_fat', 'tree_tall', 'tree_simple'], PINES = ['tree_pineRoundA', 'tree_pineRoundC', 'tree_pineTallA', 'tree_pineDefaultA'];
 
   // ---------- the land ----------
@@ -522,7 +532,7 @@
     cyl(g, 0.22, 0.55, 1.1, STEELD, 0, 0.7, 0.4, 14, SOFT);
     box(g, 0.7, 0.03, 0.5, WHITE, -0.5, 1.34, 0.3); box(g, 0.6, 0.03, 0.45, WHITE, 0.6, 1.34, 0.7); box(g, 0.34, 0.02, 0.24, NAVY, 0.1, 1.34, -0.2);
     var emblem = gear(g, gearGeo(14, 0.34, 0.46, 0.1, 0.1), ORANGE, 0, 1.95, 0.4);
-    var seats = [[-2.4, 0.5, ORANGE, 1.4], [2.4, 0.3, NAVY, -1.5], [-1.2, 2.6, NAVYL, 2.7], [1.3, 2.6, STEELD, -2.7], [0, -1.9, NAVY, 0]];
+    var seats = [[-2.4, 0.5, ORANGE, 1.57], [2.4, 0.3, NAVY, -1.57], [-1.2, 2.7, NAVYL, 2.7], [1.3, 2.7, STEELD, -2.7], [0, -1.9, NAVY, 0]];
     var people = seats.map(function (q) { var p = person(g, q[2], q[0], q[1], 0.98); p.rotation.y = q[3]; return p; });
     [-1, 1].forEach(function (sd) {
       tbox(g, 2.6, 0.12, 0.7, 'planks', 1, 0.3, sd * 5.2, 0.62, 2.6).rotation.y = sd * 0.5;
@@ -548,8 +558,8 @@
       var w = cyl(g, 0.34, 0.34, 0.24, DARK, q[0], 0.34, q[1], 16, SOFT); w.rotation.x = Math.PI / 2;
       cyl(g, 0.14, 0.14, 0.26, STEEL, q[0], 0.34, q[1], 10).rotation.x = Math.PI / 2; return w;
     });
-    var d1 = person(g, NAVYL, 0.5, 0.28, 0.72); d1.position.y = 0.52; d1.rotation.y = Math.PI / 2;
-    var d2 = person(g, ORANGE, -0.6, -0.3, 0.72); d2.position.y = 0.52; d2.rotation.y = Math.PI / 2;
+    var d1 = person(g, NAVYL, 0.55, 0.3, 0.8, 'man', 'Sitting'); d1.position.y = 0.5; d1.rotation.y = Math.PI / 2;
+    var d2 = person(g, ORANGE, -0.55, -0.3, 0.8, 'woman-casual', 'Sitting'); d2.position.y = 0.5; d2.rotation.y = Math.PI / 2;
     g.userData.wheels = wheels;
   })(cart);
   var STOP_Z = [32, 14.5, 4.5, -7.5, -17.5, -30.5], STOP_U = STOP_Z.map(function (z) {

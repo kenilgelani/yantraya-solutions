@@ -1,2 +1,3 @@
-Models in this folder are from Kenney (www.kenney.nl): Mini Characters, Nature Kit, Furniture Kit and Factory Kit.
-Licence: Creative Commons Zero (CC0), http://creativecommons.org/publicdomain/zero/1.0/
+people/: characters by Quaternius (quaternius.com), downloaded from poly.pizza. Licence: CC0 1.0.
+nature/, furniture/, factory/: Kenney (www.kenney.nl) Nature Kit, Furniture Kit and Factory Kit. Licence: CC0 1.0.
+http://creativecommons.org/publicdomain/zero/1.0/

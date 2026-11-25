@@ -570,10 +570,10 @@
 
   // labels and signs use the page's display font, so draw them once it has loaded
   function drawText() {
-    label(st[1], 'Engineering Academy', 0.6, 6.2, -3.4, 1, 'academy.html');
-    label(st[2], 'Project Lab', 0.2, 6.2, -3.4, 2, 'academy.html');
-    label(st[3], 'SME Audit & Compliance', 0.3, 6.2, -3.4, 3, 'audit.html');
-    label(st[4], 'Workforce Solutions', 0.4, 6.2, -3.4, 4, 'workforce.html');
+    label(st[1], 'Engineering Academy', 0.6, 6.2, -3.4, 1, 'engineering-academy-project-lab/');
+    label(st[2], 'Project Lab', 0.2, 6.2, -3.4, 2, 'engineering-academy/projects-prototyping/');
+    label(st[3], 'SME Audit & Compliance', 0.3, 6.2, -3.4, 3, 'sme-audit-compliance/');
+    label(st[4], 'Workforce Solutions', 0.4, 6.2, -3.4, 4, 'workforce-solutions/');
     var c = document.createElement('canvas'); c.width = 1472; c.height = 240;
     var x = c.getContext('2d'); x.fillStyle = '#16245c'; x.fillRect(0, 0, c.width, c.height);
     x.textBaseline = 'middle';
